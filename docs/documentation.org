@@ -1,0 +1,20 @@
+* A Description of the Algorithm 
+
+
+The algorithm should generate an "answer set" that is a set of terms that  have a match under the given relation.
+
+
+
+
+
+#+begin_src ocaml 
+type answerSet = { relation : term -> term -> bool
+                 , terms:     [term] }
+
+#+end_src
+
+
+
+A term 't' may be added as part of the answer set when it meets the following criteria.
+
++ answerSet
