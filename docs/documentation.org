@@ -18,3 +18,31 @@ type answerSet = { relation : term -> term -> bool
 A term 't' may be added as part of the answer set when it meets the following criteria.
 
 + answerSet
+
+
+* Notes from Pfenning [[https://www.cs.cmu.edu/~fp/courses/lp/lectures/26-datalog.pdf][Datalog Implementation]]
+
+** Represent every predicate as a boolean function
+This is done in two steps: based on the type of
+the argument, we find out how many distinct constants can appear in this
+argument (say n) and then represent them with log2(n) bits. The output of
+the function is always 1 or 0, depending on whether the predicate is true
+(1) or false (0). 
+
+
+
+live₀(x₁,k₂) ^ succ(k₂,k₃)
+
+
+*** live₀(x₁,k₂)
+    
+x₁ — - 0 — —-> 0
+   |
+   ——- 1 ——— > k₂ – – -  0 -> 1
+                  |
+                  ———————1——->0
+
+
+*** succ(k₂,k₃)
+
+k₂ ——–

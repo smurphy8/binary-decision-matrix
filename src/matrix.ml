@@ -58,9 +58,9 @@ let varX : variable = Variable "x"
 
                           
 
-type ('a, 'b)  relation = {name:string;
-                           args:['a];
-                           sort:'b  }
+type 'a relation = {name:string;
+                    args:'a list;
+                     sort:'a  }
 
 
 
@@ -68,7 +68,7 @@ type ('a, 'b)  relation = {name:string;
 
                         
 type expression = Symbol of symbol
-                | Relation of (expression, expression) relation 
+                | Relation of expression relation 
                 | FreeVariable of variable
                 | BoundVariable of variable * expression                 
 
@@ -80,9 +80,6 @@ type expression = Symbol of symbol
 
 
 (** Language Example *)
-
-
-
 
 let symbolA : symbol = Symbol "A"
 let symbolB : symbol = Symbol "B"
@@ -108,25 +105,24 @@ Then
 
  *)                      
 
-let relPreferredAtoB a b =  Relation {name = "relPreferredAtoB";
-                                      arg1 = a;
-                                      arg2 = b;}
+let relPreferredAtoB a b = Relation  { name = "relPreferredAtoB"; 
+                           args = [a;
+                                   b];
+                           sort =  a }
 
-let transitivePreferenceRule a b c = Relation { name = "transitivePreferenceRule"
-                                          arg1 = relPreferredAtoB a b
-
-let assign str t = BoundVariable ((Variable str), t)
+let assign str t = BoundVariable ((Variable str), t) 
 
 
 (* Set of Facts *) 
-let facts             = [assign "x1" expA;
-                         assign "x2" expB;
-                         assign "x3" expC;
-                         assign "x4" expD;
-                         relPreferredAtoB expB expA;
-                         relPreferredAtoB expC expB;]
-          
+let facts             = [ assign "x1" expA;
+                          assign "x2" expB;
+                          assign "x3" expC;
+                          assign "x4" expD;]
+            
+  
+  
+            
+type rankable = { name : string ; score: int} 
 
 
-          
-type rankable = { name : string ; score: int}
+                  

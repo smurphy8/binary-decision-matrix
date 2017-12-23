@@ -6,7 +6,12 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "reason-scripts": "0.8.0"
-  },    "eject": "react-scripts eject",
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
     "prepare": "npm link bs-platform"
   },
   "devDependencies": {
