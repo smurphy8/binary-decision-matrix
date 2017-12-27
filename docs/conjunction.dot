@@ -1,0 +1,34 @@
+digraph G {
+        
+size ="4,4";
+liveK₂ [label="k₂"];
+succK₂ [label="k₂"];
+liveX₁ [label="x₁"];
+
+zeroL  [label="0"];
+oneL   [label="1"];
+
+subgraph Live {
+        liveX₁ -> liveK₂ [label="0",style=dotted];
+        liveX₁ -> liveK₂ [label="1"];
+        liveK₂ -> zeroL [label="0", style=dotted];
+        liveK₂ -> oneL [label="1" ];
+        
+        
+}
+
+// main -> parse [weight=8];
+// parse -> execute;
+// main -> init [style=dotted];
+// main -> cleanup;
+// execute -> { make_string; printf}
+// init -> make_string;
+// edge [color=red];   // so is this
+// main -> printf [style=bold,label="100 times"];
+// make_string [label="make a\nstring"];
+// node [shape=box,style=filled,color=".7 .3 1.0"];
+// execute -> compare;
+
+
+
+}

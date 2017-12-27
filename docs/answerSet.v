@@ -1,3 +1,4 @@
+
 (* 
 
 A description of the Algorithm in Coq
@@ -78,10 +79,23 @@ Record answers := mkAnswers { relationA : relation ;
                               }.
 
 
-        
+
+(** Binary Decision Diagrams 
+
+Notice, the BddNode is not a simple binary structure, this is to allow proper reductions to occur. 
+
+*)
+
+
+Record bddNode := mkBddNode { bnIndex : nat;
+                              bnLabel : string;
+                              bnValue : bool; }.
 
 
 
+Inductive bdd : Set :=
+ | leftChild  : bddNode -> bdd -> bdd
+ | rightChild : bddNode -> bdd -> bdd -> bdd.
 
 
 

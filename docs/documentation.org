@@ -34,15 +34,65 @@ the function is always 1 or 0, depending on whether the predicate is true
 live₀(x₁,k₂) ^ succ(k₂,k₃)
 
 
-*** live₀(x₁,k₂)
+*** live[0](x₁,k₂)
     
-x₁ — - 0 — —-> 0
+x₁ — - 0 — — - - - - - - - ->  0
    |
-   ——- 1 ——— > k₂ – – -  0 -> 1
+   ——- 1 ——— > k₂ – - - -0 ->  1
                   |
-                  ———————1——->0
+                  ———————1——-> 0
+ 
+
+**** live[0]₀ ≡  live[0](x1,0)  , live[0]₁ ≡  live[0](x1,1)   
 
 
+k₂ – - - -0 ->  live[0]₀
+   |             
+   ———————1——-> live[0]₁
+
+    
+
+
+                  
 *** succ(k₂,k₃)
 
-k₂ ——–
+
+
+k₂ ———— 1 ——— k₃ —-—- 1 —- > 0
+   |              
+   |  - - - 0 -  k₃ - - 0 - -> 0
+                  
+                  ——- 1——-—> 1
+
+
+****  S₀ ≡ succ(0,k₃) , S₁ ≡ succ(0,k₃)
+
+
+#+LATEX_HEADER: \usepackage{tikz}
+
+First execute the second code block, to define the convenience macro
+and to set the required new variables in ob-latex.el.  Then export to
+HTML and to pdf to see the tree exported as an SVG image and as
+embedded tikz respectively.
+
+* Tikz test
+
+
+
+
+
+  Here's a tree, exported to both html and pdf.
+
+#+header: :file (by-backend (html "tree.svg") (t 'nil))
+#+header: :imagemagick
+#+header: :results (by-backend (pdf "latex") (t "raw"))
+#+begin_src latex
+  \usetikzlibrary{trees}
+  \begin{tikzpicture}
+    \node [circle, draw, fill=red!20] at (0,0) {1}
+    child { node [circle, draw, fill=blue!30] {2}
+      child { node [circle, draw, fill=green!30] {3} }
+      child { node [circle, draw, fill=yellow!30] {4} }};
+  \end{tikzpicture}
+#+end_src
+
