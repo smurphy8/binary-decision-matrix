@@ -44,7 +44,8 @@ Order:   E > B > C > A > D
 Score:   4   3   2   1   0
 
 
-Only 2 items were compared to specify the rankings
+Only 2 items were compared to specify the rankings.
+
  *)
 
 
