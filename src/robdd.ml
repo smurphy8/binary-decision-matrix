@@ -24,21 +24,22 @@ module Robdd =
     type names = (string,int) Hashtbl.t
     type name  = (string * int)
 
-
+     
     let emptyNames : names = Hashtbl.create 0
                            
+    
+
+    let addName (names:names) (name ,i ) :_    =
+      (match Hashtbl.find_all names name with
+        [] -> (Hashtbl.add names name i)
+       |x::_ -> Hashtbl.replace names name (x+1))
 
 
-    let addName names (name,i)  = match Hashtbl.find_all names name with
-        [] -> Hashtbl.add names name i
-       |x::_ -> Hashtbl.replace names name (x+1)
 
 
+    let showNames (names:names): string = Hashtbl.fold (fun a b c -> a ^ "." ^ (string_of_int b) ^ " " ^ c ) names ""
 
-
-    let showNames names = Hashtbl.fold (fun a b c -> a ^ "." ^ (string_of_int b) ^ " " ^ c ) names ""
-
-    let showName (str, i)  = str ^ "_" ^ (string_of_int i)
+    let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
 
 
 
@@ -56,13 +57,14 @@ module Robdd =
               
     type id = Id of name
     type label = Label of name
-
+    type 'a noption = NSome of 'a | Zero | One
 
 
     (* map over some data *) 
-    let mapSome f b  = match b with
-      | None  -> b
-      | Some a -> Some (f a)
+    let mapSome f b  = (match b with
+      | Zero  -> b
+      | One   -> b
+      | NSome a -> NSome (f a))
 
                 
 
@@ -83,8 +85,8 @@ module Robdd =
 
 
     type bdd = { node: bddData;
-                 zeroChild: (bdd option);
-                 oneChild: bdd option  }
+                 zeroChild: (bdd noption);
+                 oneChild: bdd noption  }
 
 
 
@@ -105,7 +107,7 @@ module Robdd =
     (* standard map over data *)
     let rec map f b = { node = f b.node;
                         zeroChild = mapSome (map f) b.zeroChild;
-                        oneChild = mapSome (map f) b.oneChild;
+                        oneChild = mapSome  (map f) b.oneChild;
                       }
 
 
@@ -113,11 +115,13 @@ module Robdd =
     let rec fold f b bdd  =
       let rsltV = f bdd.node b
       in match bdd.zeroChild with
-           None -> rsltV 
-         | Some bddZ -> let rsltZ = (fold f rsltV bddZ)
+         | Zero -> rsltV 
+         | One  -> rsltV 
+         | NSome bddZ -> let rsltZ = (fold f rsltV bddZ)
                         in match bdd.oneChild with
-                             None -> rsltZ
-                           | Some bddO -> fold f rsltZ bddO
+                           | Zero -> rsltZ
+                           | One  -> rsltZ
+                           | NSome bddO -> fold f rsltZ bddO
 
                                         
     let mk name z o = {node={id=(Id name);
@@ -153,20 +157,35 @@ module Robdd =
       let rec showBdd' nodes edgesZero edgesOne bddC = 
         let allNodes = NodeSet.add bddC.node nodes             
         in match bddC.zeroChild with
-             None   -> (let zel = mkBddZeroEdge bddC
+             Zero   -> (let zel = mkBddZeroEdge bddC
                         in match bddC.oneChild with
-                             None -> let oel = mkBddOneEdge bddC
-                                     and _ = print_string "None"
-                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne )
-                            |Some childBdd ->
-                               (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
-            |Some bddZ ->
+                             One -> (let oel = mkBddOneEdge bddC
+                                     and _ = print_string "One"
+                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
+                            |Zero -> (let oel = mkBddZeroEdge bddC
+                                     and _ = print_string "Zero"
+                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
+                            |NSome childBdd ->
+                              (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
+            |One   -> (let zel = mkBddOneEdge bddC
+                        in match bddC.oneChild with
+                             One -> (let oel = mkBddOneEdge bddC
+                                     and _ = print_string "One"
+                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
+                            |Zero -> (let oel = mkBddZeroEdge bddC
+                                     and _ = print_string "Zero"
+                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))      
+                            |NSome childBdd ->
+                               (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
+            |NSome bddZ ->
                let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
                in match bddC.oneChild with
-                    None -> let oel = mkBddOneEdge bddC 
-                            in (zNodes, zEdges, EdgeSet.add oel oEdges )
-                   |Some bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO
-             
+                    One -> (let oel = mkBddOneEdge bddC 
+                            in (zNodes, zEdges, EdgeSet.add oel oEdges ))
+                  | Zero -> (let oel = mkBddOneEdge bddC 
+                             in (zNodes, zEdges, EdgeSet.add oel oEdges ))
+                  |NSome bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO
+                               
                            
       in let (nodes,zEdges,oEdges) = showBdd' (NodeSet.empty) (EdgeSet.empty) (EdgeSet.empty) bddP
          in let nodeDefinitions = (NodeSet.fold (fun n str -> gvBddNode n ^ str)  nodes "")
@@ -182,22 +201,26 @@ module Robdd =
        The below types and functions are to deal with the business of naming and labeling parts of the BDD
      *)                                        
        
-       
+     
     (*  nbdd are bdd's with the concept of a name space 
         this allows simple naming for the boolean operations that require labeling *)
     type nbdd = { name:name;
                   bdd:bdd}
 
-          
 
-    let exBf = let    x4 = mk ("x",4) None None
-               in let x3 = mk ("x",3) (Some x4) None
-                  in let x2 = mk ("x",2) (Some x4) (Some x3)
-                     in mk ("x",1) (Some x2) (Some x3)
+    (* Example graphs for testing *)            
 
+    let exBf = let    x4 = mk ("x",4) Zero One
+               in let x3 = mk ("x",3) (NSome x4) One
+                  in let x2 = mk ("x",2) (NSome x4) (NSome x3)
+                     in mk ("x",1) (NSome x2) (NSome x3)
 
-    let exSimple = let x3 = mk ("x",3) None None
-                   in mk ("x",1) (Some x3) (Some x3)
+    let exBg = let x4 = mk ( "x",4) One Zero
+               in let x3 = mk ( "x",3) (NSome x4) One
+                  in  mk ( "x",1) (NSome x4) (NSome x3)
+                    
+    let exSimple = let x3 = mk ("x",3) Zero One
+                   in mk ("x",1) (NSome x3) (NSome x3)
                     
 
   end

@@ -75,6 +75,7 @@ and to set the required new variables in ob-latex.el.  Then export to
 HTML and to pdf to see the tree exported as an SVG image and as
 embedded tikz respectively.
 
+
 * Tikz test
 
 
@@ -95,4 +96,7 @@ embedded tikz respectively.
       child { node [circle, draw, fill=yellow!30] {4} }};
   \end{tikzpicture}
 #+end_src
+
+
+
 
