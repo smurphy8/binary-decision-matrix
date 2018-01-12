@@ -60,7 +60,7 @@ module Robdd =
 
 
     (* map over some data *) 
-    let mapSome f b  = (match b with
+    let mapSome (f:'a -> 'b) (b:'a noption) : 'b noption = (match b with
       | Zero  -> b
       | One   -> b
       | NSome a -> NSome (f a))
@@ -222,8 +222,8 @@ X_j (X_i : i>j | 0 | 1) case
 
 
     let boolAsOptional b = if b 
-                           then Zero
-                           else One
+                           then One
+                           else Zero
 
                                        
     (* Unlike apply above, this is for terminal application only 
@@ -234,18 +234,27 @@ X_j (X_i : i>j | 0 | 1) case
          (Zero, Zero) -> boolAsOptional (op false false)
        | (Zero, One)  -> boolAsOptional (op false true)
        | (One , Zero) -> boolAsOptional (op true false)
-       | (One ,One)   -> boolAsOptional (op true true)                                                               
+       | (One ,One)   -> boolAsOptional (op true true)                               
        | (a,_) -> a )
       
 
 
                                            
-    let rec apply noptBddA noptBddB op =
+    let rec apply (noptBddA : bdd noption)  (noptBddB : bdd noption) op  =
       (match (noptBddA,noptBddB) with
          (Zero,Zero) -> applyArgument Zero Zero op
        | (Zero,One)  -> applyArgument Zero One  op
        | (One ,Zero) -> applyArgument One  Zero op                      
-       | (One ,One ) -> applyArgument One  One  op                 
+       | (One ,One ) -> applyArgument One  One  op
+                      
+       | (One ,NSome rg) -> NSome ( {node = rg.node;
+                                     zeroChild = apply One rg.zeroChild op;
+                                     oneChild  = apply One rg.oneChild op })
+                          
+       | (Zero ,NSome rg) -> NSome ( {node = rg.node;
+                                     zeroChild = apply Zero rg.zeroChild op;
+                                     oneChild  = apply Zero rg.oneChild op })
+                           
        | (NSome rf, NSome rg) when (rf.node == rg.node) ->
           (NSome ({node = rf.node;
                    zeroChild = (apply rf.zeroChild rg.zeroChild op);
@@ -296,11 +305,20 @@ X_j (X_i : i>j | 0 | 1) case
                   in  mk ( "x",1) (NSome x4) (NSome x3)
 
 
+
+                    
     let exBgBf = apply (NSome exBf) (NSome exBg) (||)
-    let prop_reflexive_apply = apply One One (||) 
-                             
+
+    let exOneNode = mk ("x",1) Zero One
+               
+    let prop_reflexive_apply : bdd noption = (apply One (NSome exOneNode) (||) )
+    let show_prop = match prop_reflexive_apply  with
+        One -> "one"
+      | Zero -> "Zero"
+      | (NSome rg) -> showBdd rg
+
+                    
     let exSimple = let x3 = mk ("x",3) Zero One
                    in mk ("x",1) (NSome x3) (NSome x3)
-                    
 
   end
