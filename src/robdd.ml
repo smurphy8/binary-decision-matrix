@@ -54,7 +54,7 @@ module Robdd =
 
     (* Data type for BDD *)
               
-
+    type id = Id of name    
     type label = Label of name
     type 'a noption = NSome of 'a | Zero | One
 
@@ -68,6 +68,7 @@ module Robdd =
                 
 
     type bddData = { label: label}
+
     
     let zeroNode = {label = Label ("zero",0)}
     let oneNode = {label = Label ("one",1)}
@@ -80,6 +81,7 @@ module Robdd =
 
 
     type bdd = { node: bddData;
+                 id: (id option);
                  zeroChild: (bdd noption);
                  oneChild: bdd noption  }
 
@@ -99,24 +101,6 @@ module Robdd =
            
     
            
-    (* standard map over data *)
-    let rec map f b = { node = f b.node;
-                        zeroChild = mapSome (map f) b.zeroChild;
-                        oneChild = mapSome  (map f) b.oneChild;
-                      }
-
-
-    (* fold with right most bias*)                    
-    let rec fold f b bdd  =
-      let rsltV = f bdd.node b
-      in match bdd.zeroChild with
-         | Zero -> rsltV 
-         | One  -> rsltV 
-         | NSome bddZ -> let rsltZ = (fold f rsltV bddZ)
-                        in match bdd.oneChild with
-                           | Zero -> rsltZ
-                           | One  -> rsltZ
-                           | NSome bddO -> fold f rsltZ bddO
 
                                         
     let mk name z o = {node={label=(Label name)};
