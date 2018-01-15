@@ -24,15 +24,15 @@ module Robdd =
     type names = (string,int) Hashtbl.t
     type name  = (string * int)
 
-     
+               
     let emptyNames : names = Hashtbl.create 0
                            
-    
+                           
 
     let addName (names:names) (name ,i ) :_    =
       (match Hashtbl.find_all names name with
-        [] -> (Hashtbl.add names name i)
-       |x::_ -> Hashtbl.replace names name (x+1))
+         [] -> (Hashtbl.add names name i)
+        |x::_ -> Hashtbl.replace names name (x+1))
 
 
 
@@ -61,23 +61,23 @@ module Robdd =
 
     (* map over some data *) 
     let mapSome (f:'a -> 'b) (b:'a noption) : 'b noption = (match b with
-      | Zero  -> b
-      | One   -> b
-      | NSome a -> NSome (f a))
+                                                            | Zero  -> b
+                                                            | One   -> b
+                                                            | NSome a -> NSome (f a))
 
-                
+                                                         
 
     type bddData = { label: label}
 
-    
+                      
     let zeroNode = {label = Label ("zero",0)}
     let oneNode = {label = Label ("one",1)}
-                 
+                
 
     let compareBddData bddA bddB =  let (Label nameLabelA) = bddA.label
                                     and (Label nameLabelB) = bddB.label
                                     in (nameLabelA == nameLabelB) 
-                                                                
+                                     
 
 
     type bdd = { node: bddData;
@@ -86,7 +86,7 @@ module Robdd =
                  oneChild: bdd noption  }
 
 
-
+                 
     module NodeSet = Set.Make(
                          struct
                            let compare = Pervasives.compare
@@ -94,25 +94,26 @@ module Robdd =
                          end)
 
     module EdgeSet = Set.Make(
-                 struct
-                   let compare = Pervasives.compare
-                   type t = bddData*bddData
-                 end )
-           
-    
-           
-
-                                        
+                         struct
+                           let compare = Pervasives.compare
+                           type t = bddData*bddData
+                         end )
+                   
+                   
+                   
+                          
+                   
     let mk name z o = {node={label=(Label name)};
+                       id = None;
                        zeroChild = z;
                        oneChild = o}
 
-   
-
-                      
+                    
+                    
+                    
     let gvBddNode n =
       let (Label l) = n.label
-         in (showName l) ^ " [label=\"" ^ (showName l) ^ "\"" ^ "];"
+      in (showName l) ^ " [label=\"" ^ (showName l) ^ "\"" ^ "];"
 
 
 
@@ -140,30 +141,30 @@ module Robdd =
                                      and _ = print_string "One"
                                      in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
                             |Zero -> (let oel = mkBddZeroEdge bddC
-                                     and _ = print_string "Zero"
-                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
+                                      and _ = print_string "Zero"
+                                      in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
                             |NSome childBdd ->
                               (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
             |One   -> (let zel = mkBddOneEdge bddC
-                        in match bddC.oneChild with
-                             One -> (let oel = mkBddOneEdge bddC
-                                     and _ = print_string "One"
-                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
-                            |Zero -> (let oel = mkBddZeroEdge bddC
+                       in match bddC.oneChild with
+                            One -> (let oel = mkBddOneEdge bddC
+                                    and _ = print_string "One"
+                                    in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
+                           |Zero -> (let oel = mkBddZeroEdge bddC
                                      and _ = print_string "Zero"
                                      in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))      
-                            |NSome childBdd ->
-                               (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
+                           |NSome childBdd ->
+                             (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
             |NSome bddZ ->
-               let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
-               in match bddC.oneChild with
-                    One -> (let oel = mkBddOneEdge bddC 
+              let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
+              in match bddC.oneChild with
+                   One -> (let oel = mkBddOneEdge bddC 
+                           in (zNodes, zEdges, EdgeSet.add oel oEdges ))
+                 | Zero -> (let oel = mkBddOneEdge bddC 
                             in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-                  | Zero -> (let oel = mkBddOneEdge bddC 
-                             in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-                  |NSome bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO
-                               
-                           
+                 |NSome bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO
+                              
+                              
       in let (nodes,zEdges,oEdges) = showBdd' (NodeSet.empty) (EdgeSet.empty) (EdgeSet.empty) bddP
          in let nodeDefinitions = (NodeSet.fold (fun n str -> gvBddNode n ^ str)  nodes "")
             and zeroDefinitions = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "dotted" ezA ezB) ^ str )  zEdges "")
@@ -174,9 +175,72 @@ module Robdd =
 
 
 
-              
+
+    (*
+ If the label id(lo(n)) is the same as id(hi(n)), then we set id(n) to be that label.
+That is because the boolean function represented at n is the same function as the
+one represented at lo(n) and hi(n). In other words, node n performs a redundant
+test and can be eliminated by reduction C2.
+r If there is another node m such that n and m have the same variable x , and
+i
+id(lo(n)) = id(lo(m)) and id(hi(n)) = id(hi(m)), then we set id(n) to be id(m).
+This is because the nodes n and m compute the same boolean function (compare
+with reduction C3).
+r Otherwise, we set id(n) to the next unused integer label.
+     *)              
+
+    let is a = match a with
+        None -> false
+      | Some _ -> true
+
+    let getOptLabel bddOpt = match bddOpt with
+        One -> Some (Id ("#",1))
+      | Zero -> Some (Id ("#",0))
+      | NSome bdd -> bdd.id 
+
+    let label bdd =
+      let rec label' lblSet bdd' = ( let zeroChild = bdd.zeroChild;
+                                     and oneChild  = bdd.oneChild;
+                                     in let optOneChildLabel = (getOptLabel zeroChild)
+                                        and optZeroChildLabel = (getOptLabel oneChild)
+                                        in ( match (optOneChildLabel, optZeroChildLabel) with
+                                                 (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> bdd
+                                               | (Some lbl1,Some lbl0) -> bdd
+                                               | (None, Some lbl0) -> bdd
+                                               | (Some lbl1, None) -> bdd
+                                               | (None,None) -> bdd       )                    )
+      in bdd
+          
+
+    (* 
+
+The reductions C1–C3 are at the core of any serious use of OBDDs, for
+whenever we construct a BDD we will want to convert it to its reduced form.
+In this section, we describe an algorithm reduce which does this efficiently
+for ordered BDDs.
+If the ordering of B is [x 1 , x 2 , . . . , x l ], then B has at most l + 1 layers. The
+algorithm reduce now traverses B layer by layer in a bottom-up fashion,
+beginning with the terminal nodes. In traversing B, it assigns an integer
+label id(n) to each node n of B, in such a way that the subOBDDs with
+root nodes n and m denote the same boolean function if, and only if, id(n)
+equals id(m).
+Since reduce starts with the layer of terminal nodes, it assigns the first
+label (say #0) to the first 0-node it encounters. All other terminal 0-nodes
+denote the same function as the first 0-node and therefore get the same label
+(compare with reduction C1). Similarly, the 1-nodes all get the next label,
+say #1.
+Now let us inductively assume that reduce has already assigned integer
+labels to all nodes of a layer > i (i.e. all terminal nodes and x j -nodes with
+j > i). We describe how nodes of layer i (i.e. x i -nodes) are being handled.
+
+     *)
+
+
+
+                       
+                       
     (* apply a binary function in two arguments to a bdd *) 
-(* From Logic in Computer Science
+    (* From Logic in Computer Science
 Given two diagrams B_f and B_g considering nodes r_f and r_g
 (0|1) (0|1) case
 1. If both r f and r g are terminal nodes with labels l f and l g , respectively (recall
@@ -200,109 +264,109 @@ X_j (X_i : i>j | 0 | 1) case
 4. The case in which r g is a non-terminal, but r f is a terminal or an x j -node with
    j > i, is handled symmetrically to case 3.
 
- *)
+     *)
 
 
 
 
-    let boolAsOptional b = if b 
-                           then One
-                           else Zero
 
-                                       
+                         
     (* Unlike apply above, this is for terminal application only 
        So the behavior in the case that it is applied to a non-terminal node is 
        arbitrary *) 
-    let applyArgument noptBddA noptBddB op =
-      (match (noptBddA,noptBddB) with
-         (Zero, Zero) -> boolAsOptional (op false false)
-       | (Zero, One)  -> boolAsOptional (op false true)
-       | (One , Zero) -> boolAsOptional (op true false)
-       | (One ,One)   -> boolAsOptional (op true true)                               
-       | (a,_) -> a )
+    (* let applyArgument noptBddA noptBddB op =
+     *   (match (noptBddA,noptBddB) with
+     *      (Zero, Zero) -> boolAsOptional (op false false)
+     *    | (Zero, One)  -> boolAsOptional (op false true)
+     *    | (One , Zero) -> boolAsOptional (op true false)
+     *    | (One ,One)   -> boolAsOptional (op true true)                               
+     *    | (a,_) -> a )
+     *   
+     * 
+     * 
+     *   
+     * let rec apply (noptBddA : bdd noption)  (noptBddB : bdd noption) op  =
+     *   (match (noptBddA,noptBddB) with
+     *      (Zero,Zero) -> applyArgument Zero Zero op
+     *    | (Zero,One)  -> applyArgument Zero One  op
+     *    | (One ,Zero) -> applyArgument One  Zero op                      
+     *    | (One ,One ) -> applyArgument One  One  op
+     *                   
+     *    | (One ,NSome rg) -> NSome ( {node = rg.node;
+     *                                  id = rg.id;
+     *                                  zeroChild = apply One rg.zeroChild op;
+     *                                  oneChild  = apply One rg.oneChild op })
+     *                       
+     *    | (Zero ,NSome rg) -> NSome ( {node = rg.node;
+     *                                   id=rg.id;
+     *                                   zeroChild = apply Zero rg.zeroChild op;
+     *                                   oneChild  = apply Zero rg.oneChild op })
+     *                        
+     *    | (NSome rf, NSome rg) when (rf.node == rg.node) ->
+     *       (NSome ({node = rf.node;
+     *                id = rf.id;
+     *                zeroChild = (apply rf.zeroChild rg.zeroChild op);
+     *                oneChild  = (apply rf.oneChild  rg.oneChild op)}))
+     * 
+     *    | (NSome rf, NSome rg) when (rf.node != rg.node) ->
+     *       (NSome ({node = rf.node;
+     *                id = rf.id;
+     *                zeroChild = (apply rf.zeroChild rg.zeroChild op);
+     *                oneChild  = (apply rf.oneChild  rg.oneChild op)}))
+     * 
+     *      
+     *    | (NSome rf, Zero) ->
+     *       (NSome ({node = rf.node;
+     *                id = rf.id;
+     *                zeroChild = (apply rf.zeroChild Zero op);
+     *                oneChild  = (apply rf.oneChild  Zero op)}))
+     *    | (NSome rf, One) ->
+     *       (NSome ({node = rf.node;
+     *                id = rf.id;
+     *                zeroChild = (apply rf.zeroChild One op);
+     *                oneChild  = (apply rf.oneChild  One op)}))
+     *    | (NSome _, NSome _) -> failwith "guarded condition should have caught apply"
+     *   ) *)
+
+
+
       
-
-
-                                           
-    let rec apply (noptBddA : bdd noption)  (noptBddB : bdd noption) op  =
-      (match (noptBddA,noptBddB) with
-         (Zero,Zero) -> applyArgument Zero Zero op
-       | (Zero,One)  -> applyArgument Zero One  op
-       | (One ,Zero) -> applyArgument One  Zero op                      
-       | (One ,One ) -> applyArgument One  One  op
-                      
-       | (One ,NSome rg) -> NSome ( {node = rg.node;
-                                     zeroChild = apply One rg.zeroChild op;
-                                     oneChild  = apply One rg.oneChild op })
-                          
-       | (Zero ,NSome rg) -> NSome ( {node = rg.node;
-                                     zeroChild = apply Zero rg.zeroChild op;
-                                     oneChild  = apply Zero rg.oneChild op })
-                           
-       | (NSome rf, NSome rg) when (rf.node == rg.node) ->
-          (NSome ({node = rf.node;
-                   zeroChild = (apply rf.zeroChild rg.zeroChild op);
-                   oneChild  = (apply rf.oneChild  rg.oneChild op)}))
-
-       | (NSome rf, NSome rg) when (rf.node != rg.node) ->
-          (NSome ({node = rf.node;
-                   zeroChild = (apply rf.zeroChild rg.zeroChild op);
-                   oneChild  = (apply rf.oneChild  rg.oneChild op)}))
-
-                  
-       | (NSome rf, Zero) ->
-          (NSome ({node = rf.node;
-                   zeroChild = (apply rf.zeroChild Zero op);
-                   oneChild  = (apply rf.oneChild  Zero op)}))
-       | (NSome rf, One) ->
-          (NSome ({node = rf.node;
-                   zeroChild = (apply rf.zeroChild One op);
-                   oneChild  = (apply rf.oneChild  One op)}))
-       | (NSome _, NSome _) -> failwith "guarded condition should have caught apply"
-      )
-
-
-
-   
-                                           
+      
     (* 
        The below types and functions are to deal with the business of naming and labeling parts of the BDD
      *)                                        
-       
-     
+      
+      
     (*  nbdd are bdd's with the concept of a name space 
         this allows simple naming for the boolean operations that require labeling *)
-    type nbdd = { name:name;
-                  bdd:bdd}
-
-    
-                 
+              
+              
     (* Example graphs for testing *)            
 
-    let exBf = let    x4 = mk ("x",4) Zero One
-               in let x3 = mk ("x",3) (NSome x4) One
-                  in let x2 = mk ("x",2) (NSome x4) (NSome x3)
-                     in mk ("x",1) (NSome x2) (NSome x3)
+    (* let exBf = let    x4 = mk ("x",4) Zero One
+     *            in let x3 = mk ("x",3) (NSome x4) One
+     *               in let x2 = mk ("x",2) (NSome x4) (NSome x3)
+     *                  in mk ("x",1) (NSome x2) (NSome x3) *)
 
-    let exBg = let    x4 = mk ( "x",4) Zero One
-               in let x3 = mk ( "x",3) (NSome x4) One
-                  in  mk ( "x",1) (NSome x4) (NSome x3)
+    (* let exBg = let    x4 = mk ( "x",4) Zero One
+     *            in let x3 = mk ( "x",3) (NSome x4) One
+     *               in  mk ( "x",1) (NSome x4) (NSome x3)
+     * 
+     * 
+     * 
+     *                 
+     * let exBgBf = apply (NSome exBf) (NSome exBg) (||) *)
 
-
-
-                    
-    let exBgBf = apply (NSome exBf) (NSome exBg) (||)
-
-    let exOneNode = mk ("x",1) Zero One
-               
-    let prop_reflexive_apply : bdd noption = (apply One (NSome exOneNode) (||) )
-    let show_prop = match prop_reflexive_apply  with
-        One -> "one"
-      | Zero -> "Zero"
-      | (NSome rg) -> showBdd rg
-
-                    
-    let exSimple = let x3 = mk ("x",3) Zero One
-                   in mk ("x",1) (NSome x3) (NSome x3)
+    (* let exOneNode = mk ("x",1) Zero One *)
+                  
+    (* let prop_reflexive_apply : bdd noption = (apply One (NSome exOneNode) (||) )
+     * let show_prop = match prop_reflexive_apply  with
+     *     One -> "one"
+     *   | Zero -> "Zero"
+     *   | (NSome rg) -> showBdd rg
+     * 
+     *                 
+     * let exSimple = let x3 = mk ("x",3) Zero One
+     *                in mk ("x",1) (NSome x3) (NSome x3) *)
 
   end
