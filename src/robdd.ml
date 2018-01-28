@@ -32,7 +32,7 @@ module Robdd =
     let addName (names:names) (name ,i ) :_    =
       (match Hashtbl.find_all names name with
          [] -> (Hashtbl.add names name i)
-        |x::_ -> Hashtbl.replace names name (x+1))
+        |x::_ -> Hashtbl.replace names name (x + 1))
 
 
 
@@ -60,15 +60,25 @@ module Robdd =
 
 
     (* map over some data *) 
-    let mapSome (f:'a -> 'b) (b:'a noption) : 'b noption = (match b with
+    let mapNSome (f:'a -> 'b) (b:'a noption) : 'b noption = (match b with
                                                             | Zero  -> b
                                                             | One   -> b
                                                             | NSome a -> NSome (f a))
 
-                                                         
+    let mapSome (f:'a -> 'b) (b:'a option) : 'b option = (match b with
+                                                            | None -> None
+                                                            | Some a -> Some (f a))
+
+    
 
     type bddData = { label: label}
-
+                 
+    type idBddData = {idlabel:label;
+                      idZeroChild: id;
+                      idOneChild: id;
+                      
+                     }
+                   
                       
     let zeroNode = {label = Label ("zero",0)}
     let oneNode = {label = Label ("one",1)}
@@ -85,8 +95,13 @@ module Robdd =
                  zeroChild: (bdd noption);
                  oneChild: bdd noption  }
 
+    module IdMap   = Map.Make (
+                         struct
+                           type t = idBddData
+                           let compare = Pervasives.compare
+                         end
+                       )
 
-                 
     module NodeSet = Set.Make(
                          struct
                            let compare = Pervasives.compare
@@ -100,8 +115,9 @@ module Robdd =
                          end )
                    
                    
-                   
-                          
+    (* structure to hold a list of labels with id and the latest id used *)                  
+    type bddIdRecord = { idMap: int IdMap.t;
+                         idInt: int}
                    
     let mk name z o = {node={label=(Label name)};
                        id = None;
@@ -193,23 +209,66 @@ r Otherwise, we set id(n) to the next unused integer label.
         None -> false
       | Some _ -> true
 
-    let getOptLabel bddOpt = match bddOpt with
+    (*    Generate an ID for One and Zero nodes *) 
+    let getOptId (bddOpt : bdd noption)  : id option = match bddOpt with
         One -> Some (Id ("#",1))
       | Zero -> Some (Id ("#",0))
       | NSome bdd -> bdd.id 
 
+    (* Transform the given bdd to one with the id provided *) 
+    let reindex (bdd : bdd)  newindex = {node      = bdd.node;
+                                         id        = Some newindex;
+                                         zeroChild = bdd.zeroChild;
+                                         oneChild  = bdd.oneChild}
+                                      
+    (* Transform the given bdd to one with the id provided *) 
+    let updateChildren (bdd : bdd)  c0 c1 = {node      = bdd.node;
+                                             id        = bdd.id;
+                                             zeroChild = c0;
+                                             oneChild  = c1}
+      
+
+    (* construct a idBddData entry from a given bdd and labels *)
+    let makeIdBddData (bdd:bdd) (lbl0:id)  (lbl1:id) : idBddData = {idlabel= bdd.node.label;
+                                       idZeroChild = lbl0;
+                                       idOneChild  = lbl1; }
+
+
+
+    (* This function returns the value that should be next assigned to a labeling scheme.
+       If the value is already found in the map, then return this value.
+       Otherwise get a fresh integer, update the records and return  *)
+      
+    let getIndexToAssign (idRecord:bddIdRecord) (idData:idBddData) = if (IdMap.mem idData idRecord.idMap )
+                                                                     then (idRecord, ("#",(IdMap.find  idData idRecord.idMap)))
+                                                                     else let updatedInteger = idRecord.idInt + 1
+                                                                          in  let updatedMap = IdMap.add idData
+                                                                                                         updatedInteger
+                                                                                                         idRecord.idMap
+                                                                               
+                                                                              in ( {idMap = updatedMap; idInt= updatedInteger}
+                                                                                 , ("#", updatedInteger))
+
+    (* Transform a bdd node into an idbdd node for comparison. *)
+    (* idBddData *)   
+    (* bddIdRecord *)
+   
+                                        
+                                        
     let label bdd =
-      let rec label' lblSet bdd' = ( let zeroChild = bdd.zeroChild;
-                                     and oneChild  = bdd.oneChild;
-                                     in let optOneChildLabel = (getOptLabel zeroChild)
-                                        and optZeroChildLabel = (getOptLabel oneChild)
-                                        in ( match (optOneChildLabel, optZeroChildLabel) with
-                                                 (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> bdd
-                                               | (Some lbl1,Some lbl0) -> bdd
-                                               | (None, Some lbl0) -> bdd
-                                               | (Some lbl1, None) -> bdd
-                                               | (None,None) -> bdd       )                    )
-      in bdd
+      let rec label' indexTracker bdd' = ( let zeroChild = bdd'.zeroChild;
+                                           and oneChild  = bdd'.oneChild;
+                                           in let optOneChildLabel = (getOptId zeroChild)
+                                              and optZeroChildLabel = (getOptId oneChild)
+                                              in ( match (optOneChildLabel, optZeroChildLabel) with
+                                                     (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> reindex bdd' lbl1
+                                                   | (Some lbl1, Some lbl0) -> bdd'
+                                                   | (None, Some lbl0) -> bdd'
+                                                   | (Some lbl1, None) -> bdd'
+                                                   | (None,None) -> let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
+                                                                    and indexedOneChild  =  mapNSome (label' indexTracker) oneChild
+                                                                    in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
+      in label' { idMap=(IdMap.empty) ; idInt=1 } bdd
           
 
     (* 
