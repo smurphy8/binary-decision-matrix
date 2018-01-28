@@ -221,17 +221,16 @@ r Otherwise, we set id(n) to the next unused integer label.
                                          zeroChild = bdd.zeroChild;
                                          oneChild  = bdd.oneChild}
                                       
-    (* Transform the given bdd to one with the id provided *) 
-    let updateChildren (bdd : bdd)  c0 c1 = {node      = bdd.node;
-                                             id        = bdd.id;
-                                             zeroChild = c0;
-                                             oneChild  = c1}
+    (* Transform the given bdd to one with new children *) 
+    let updateChildren (bdd : bdd)  c0 c1 = {bdd with zeroChild = c0;
+                                                      oneChild  = c1;}
       
-
+    let updateMap (bddIdRecord : bddIdRecord) (m ) = {bddIdRecord with idMap = m}
+                                                                                  
     (* construct a idBddData entry from a given bdd and labels *)
     let makeIdBddData (bdd:bdd) (lbl0:id)  (lbl1:id) : idBddData = {idlabel= bdd.node.label;
-                                       idZeroChild = lbl0;
-                                       idOneChild  = lbl1; }
+                                                                    idZeroChild = lbl0;
+                                                                    idOneChild  = lbl1; }
 
 
 
@@ -255,13 +254,18 @@ r Otherwise, we set id(n) to the next unused integer label.
                                         
                                         
     let label bdd =
-      let rec label' indexTracker bdd' = ( let zeroChild = bdd'.zeroChild;
+      let rec label' (indexTracker : bddIdRecord ref) bdd' = ( let zeroChild = bdd'.zeroChild;
                                            and oneChild  = bdd'.oneChild;
                                            in let optOneChildLabel = (getOptId zeroChild)
                                               and optZeroChildLabel = (getOptId oneChild)
                                               in ( match (optOneChildLabel, optZeroChildLabel) with
-                                                     (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> reindex bdd' lbl1
-                                                   | (Some lbl1, Some lbl0) -> bdd'
+                                                     (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> (reindex bdd' lbl1)
+                                                   | (Some lbl1, Some lbl0) ->
+                                                      let nodeIdData = makeIdBddData bdd' lbl0 lbl1
+                                                      in let (newTracker, newIdVal) = getIndexToAssign !indexTracker nodeIdData
+                                                          
+                                                         in let _ = indexTracker := newTracker
+                                                            in (reindex bdd' (Id newIdVal))
                                                    | (None, Some _lbl0) ->
                                                       let indexedOneChild  =  mapNSome (label' indexTracker) oneChild
                                                       in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
@@ -272,7 +276,7 @@ r Otherwise, we set id(n) to the next unused integer label.
                                                       let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
                                                       and indexedOneChild  =  mapNSome (label' indexTracker) oneChild
                                                       in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
-      in label' { idMap=(IdMap.empty) ; idInt=1 } bdd
+      in label' (ref { idMap=(IdMap.empty) ; idInt=1 }) bdd
           
 
     (* 
@@ -428,8 +432,8 @@ X_j (X_i : i>j | 0 | 1) case
      *   | Zero -> "Zero"
      *   | (NSome rg) -> showBdd rg
      * 
-     *                 
-     * let exSimple = let x3 = mk ("x",3) Zero One
-     *                in mk ("x",1) (NSome x3) (NSome x3) *)
+     *)                 
+    let exSimple = let x3 = mk ("x",3) Zero One
+                   in mk ("x",1) (NSome x3) (NSome x3) 
 
   end
