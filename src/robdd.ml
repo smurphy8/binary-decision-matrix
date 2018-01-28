@@ -239,15 +239,14 @@ r Otherwise, we set id(n) to the next unused integer label.
        If the value is already found in the map, then return this value.
        Otherwise get a fresh integer, update the records and return  *)
       
-    let getIndexToAssign (idRecord:bddIdRecord) (idData:idBddData) = if (IdMap.mem idData idRecord.idMap )
-                                                                     then (idRecord, ("#",(IdMap.find  idData idRecord.idMap)))
-                                                                     else let updatedInteger = idRecord.idInt + 1
-                                                                          in  let updatedMap = IdMap.add idData
-                                                                                                         updatedInteger
-                                                                                                         idRecord.idMap
-                                                                               
-                                                                              in ( {idMap = updatedMap; idInt= updatedInteger}
-                                                                                 , ("#", updatedInteger))
+    let getIndexToAssign (idRecord:bddIdRecord) (idData:idBddData) : bddIdRecord * (string * int) = if (IdMap.mem idData idRecord.idMap )
+                                                                                                    then (idRecord, ("#",(IdMap.find  idData idRecord.idMap)))
+                                                                                                    else let updatedInteger = idRecord.idInt + 1
+                                                                                                         in  let updatedMap = IdMap.add idData
+                                                                                                                                updatedInteger
+                                                                                                                                idRecord.idMap                                 
+                                                                                                             in ( {idMap = updatedMap; idInt= updatedInteger}
+                                                                                                                , ("#", updatedInteger))
 
     (* Transform a bdd node into an idbdd node for comparison. *)
     (* idBddData *)   
@@ -263,11 +262,16 @@ r Otherwise, we set id(n) to the next unused integer label.
                                               in ( match (optOneChildLabel, optZeroChildLabel) with
                                                      (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> reindex bdd' lbl1
                                                    | (Some lbl1, Some lbl0) -> bdd'
-                                                   | (None, Some lbl0) -> bdd'
-                                                   | (Some lbl1, None) -> bdd'
-                                                   | (None,None) -> let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
-                                                                    and indexedOneChild  =  mapNSome (label' indexTracker) oneChild
-                                                                    in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
+                                                   | (None, Some _lbl0) ->
+                                                      let indexedOneChild  =  mapNSome (label' indexTracker) oneChild
+                                                      in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
+                                                   | (Some _lbl1, None) ->
+                                                      let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
+                                                      in  label' indexTracker (updateChildren bdd' indexedZeroChild oneChild) 
+                                                   | (None,None) ->
+                                                      let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
+                                                      and indexedOneChild  =  mapNSome (label' indexTracker) oneChild
+                                                      in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
       in label' { idMap=(IdMap.empty) ; idInt=1 } bdd
           
 
