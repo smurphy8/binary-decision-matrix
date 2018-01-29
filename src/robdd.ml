@@ -56,14 +56,13 @@ module Robdd =
               
     type id = Id of name    
     type label = Label of name
-    type 'a noption = NSome of 'a | Zero | One
-
 
     (* map over some data *) 
-    let mapNSome (f:'a -> 'b) (b:'a noption) : 'b noption = (match b with
-                                                            | Zero  -> b
-                                                            | One   -> b
-                                                            | NSome a -> NSome (f a))
+
+    let joinSome (ooa : ((id option) option)) : (id option) = match ooa with
+      | None  -> None
+      |Some None -> None
+      |Some oa -> oa
 
     let mapSome (f:'a -> 'b) (b:'a option) : 'b option = (match b with
                                                             | None -> None
@@ -92,8 +91,8 @@ module Robdd =
 
     type bdd = { node: bddData;
                  id: (id option);
-                 zeroChild: (bdd noption);
-                 oneChild: bdd noption  }
+                 zeroChild: (bdd option);
+                 oneChild: bdd option  }
 
     module IdMap   = Map.Make (
                          struct
@@ -147,47 +146,47 @@ module Robdd =
 
 
                          
-    let showBdd bddP =
-      let rec showBdd' nodes edgesZero edgesOne bddC = 
-        let allNodes = NodeSet.add bddC.node nodes             
-        in match bddC.zeroChild with
-             Zero   -> (let zel = mkBddZeroEdge bddC
-                        in match bddC.oneChild with
-                             One -> (let oel = mkBddOneEdge bddC
-                                     and _ = print_string "One"
-                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
-                            |Zero -> (let oel = mkBddZeroEdge bddC
-                                      and _ = print_string "Zero"
-                                      in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
-                            |NSome childBdd ->
-                              (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
-            |One   -> (let zel = mkBddOneEdge bddC
-                       in match bddC.oneChild with
-                            One -> (let oel = mkBddOneEdge bddC
-                                    and _ = print_string "One"
-                                    in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
-                           |Zero -> (let oel = mkBddZeroEdge bddC
-                                     and _ = print_string "Zero"
-                                     in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))      
-                           |NSome childBdd ->
-                             (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
-            |NSome bddZ ->
-              let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
-              in match bddC.oneChild with
-                   One -> (let oel = mkBddOneEdge bddC 
-                           in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-                 | Zero -> (let oel = mkBddOneEdge bddC 
-                            in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-                 |NSome bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO
+    (* let showBdd bddP =
+     *   let rec showBdd' nodes edgesZero edgesOne bddC = 
+     *     let allNodes = NodeSet.add bddC.node nodes             
+     *     in match bddC.zeroChild with
+     *          Zero   -> (let zel = mkBddZeroEdge bddC
+     *                     in match bddC.oneChild with
+     *                          One -> (let oel = mkBddOneEdge bddC
+     *                                  and _ = print_string "One"
+     *                                  in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
+     *                         |Zero -> (let oel = mkBddZeroEdge bddC
+     *                                   and _ = print_string "Zero"
+     *                                   in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
+     *                         |Some childBdd ->
+     *                           (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
+     *         |One   -> (let zel = mkBddOneEdge bddC
+     *                    in match bddC.oneChild with
+     *                         One -> (let oel = mkBddOneEdge bddC
+     *                                 and _ = print_string "One"
+     *                                 in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
+     *                        |Zero -> (let oel = mkBddZeroEdge bddC
+     *                                  and _ = print_string "Zero"
+     *                                  in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))      
+     *                        |Some childBdd ->
+     *                          (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
+     *         |Some bddZ ->
+     *           let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
+     *           in match bddC.oneChild with
+     *                One -> (let oel = mkBddOneEdge bddC 
+     *                        in (zNodes, zEdges, EdgeSet.add oel oEdges ))
+     *              | Zero -> (let oel = mkBddOneEdge bddC 
+     *                         in (zNodes, zEdges, EdgeSet.add oel oEdges ))
+     *              |Some bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO *)
                               
                               
-      in let (nodes,zEdges,oEdges) = showBdd' (NodeSet.empty) (EdgeSet.empty) (EdgeSet.empty) bddP
-         in let nodeDefinitions = (NodeSet.fold (fun n str -> gvBddNode n ^ str)  nodes "")
-            and zeroDefinitions = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "dotted" ezA ezB) ^ str )  zEdges "")
-            and oneDefinitions  = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "solid" ezA ezB) ^ str)  oEdges "")
-            and preamble = "digraph G { size = \"4,4\"; "
-            and graphStart = "subgraph Live { "                         
-            in  (preamble ^ nodeDefinitions ^ graphStart ^ zeroDefinitions ^ oneDefinitions ^ "}}")
+      (* in let (nodes,zEdges,oEdges) = showBdd' (NodeSet.empty) (EdgeSet.empty) (EdgeSet.empty) bddP
+       *    in let nodeDefinitions = (NodeSet.fold (fun n str -> gvBddNode n ^ str)  nodes "")
+       *       and zeroDefinitions = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "dotted" ezA ezB) ^ str )  zEdges "")
+       *       and oneDefinitions  = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "solid" ezA ezB) ^ str)  oEdges "")
+       *       and preamble = "digraph G { size = \"4,4\"; "
+       *       and graphStart = "subgraph Live { "                         
+       *       in  (preamble ^ nodeDefinitions ^ graphStart ^ zeroDefinitions ^ oneDefinitions ^ "}}") *)
 
 
 
@@ -209,11 +208,18 @@ r Otherwise, we set id(n) to the next unused integer label.
         None -> false
       | Some _ -> true
 
-    (*    Generate an ID for One and Zero nodes *) 
-    let getOptId (bddOpt : bdd noption)  : id option = match bddOpt with
-        One -> Some (Id ("#",1))
-      | Zero -> Some (Id ("#",0))
-      | NSome bdd -> bdd.id 
+    let isZero bdd = bdd.node == {label = (Label ("0",0))}
+
+    let isOne bdd = bdd.node == {label = (Label ("1",1))}
+
+    let zeroId = (Id ("0",0))
+    let oneId = (Id ("1",1))
+
+                  
+    let zeroBdd = { node = {label = Label ("0",0)};
+                    id = Some (Id ("0",0));
+                    zeroChild = None;
+                    oneChild = None}     
 
     (* Transform the given bdd to one with the id provided *) 
     let reindex (bdd : bdd)  newindex = {node      = bdd.node;
@@ -255,27 +261,28 @@ r Otherwise, we set id(n) to the next unused integer label.
                                         
     let label bdd =
       let rec label' (indexTracker : bddIdRecord ref) bdd' = ( let zeroChild = bdd'.zeroChild;
-                                           and oneChild  = bdd'.oneChild;
-                                           in let optOneChildLabel = (getOptId zeroChild)
-                                              and optZeroChildLabel = (getOptId oneChild)
-                                              in ( match (optOneChildLabel, optZeroChildLabel) with
-                                                     (Some lbl1, Some lbl0) when (lbl1 == lbl0) -> (reindex bdd' lbl1)
-                                                   | (Some lbl1, Some lbl0) ->
-                                                      let nodeIdData = makeIdBddData bdd' lbl0 lbl1
-                                                      in let (newTracker, newIdVal) = getIndexToAssign !indexTracker nodeIdData
-                                                          
-                                                         in let _ = indexTracker := newTracker
-                                                            in (reindex bdd' (Id newIdVal))
-                                                   | (None, Some _lbl0) ->
-                                                      let indexedOneChild  =  mapNSome (label' indexTracker) oneChild
-                                                      in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
-                                                   | (Some _lbl1, None) ->
-                                                      let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
-                                                      in  label' indexTracker (updateChildren bdd' indexedZeroChild oneChild) 
-                                                   | (None,None) ->
-                                                      let indexedZeroChild =  mapNSome (label' indexTracker) zeroChild
-                                                      and indexedOneChild  =  mapNSome (label' indexTracker) oneChild
-                                                      in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
+                                                               and oneChild  = bdd'.oneChild;
+                                                               in let optOneChildIndex = (mapSome (fun bddChild -> bddChild.id) zeroChild)
+                                                                  and optZeroChildIndex = (mapSome (fun bddChild -> bddChild.id) zeroChild)
+                                                                  and jid (a : ((id option) option)) : (id option) = (joinSome a)
+                                                                  in ( match (jid optOneChildIndex, joinSome optZeroChildIndex) with
+                                                                         (Some idx1, Some idx0) when (idx1 == idx0) -> (reindex bdd' idx1)
+                                                                       | (Some idx1, Some idx0) ->
+                                                                          let nodeIdData = makeIdBddData bdd' idx0 idx1
+                                                                          in let (newTracker, newIdVal) = getIndexToAssign !indexTracker nodeIdData
+                                                                                                        
+                                                                             in let _ = indexTracker := newTracker
+                                                                                in (reindex bdd' (Id newIdVal))
+                                                                       | (None, Some _lbl0) ->
+                                                                          let indexedOneChild  =  mapSome (label' indexTracker) oneChild
+                                                                          in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
+                                                                       | (Some _lbl1, None) ->
+                                                                          let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
+                                                                          in  label' indexTracker (updateChildren bdd' indexedZeroChild oneChild) 
+                                                                       | (None,None) ->
+                                                                          let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
+                                                                          and indexedOneChild  =  mapSome (label' indexTracker) oneChild
+                                                                          in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
       in label' (ref { idMap=(IdMap.empty) ; idInt=1 }) bdd
           
 
@@ -352,47 +359,47 @@ X_j (X_i : i>j | 0 | 1) case
      * 
      * 
      *   
-     * let rec apply (noptBddA : bdd noption)  (noptBddB : bdd noption) op  =
+     * let rec apply (noptBddA : bdd option)  (noptBddB : bdd option) op  =
      *   (match (noptBddA,noptBddB) with
      *      (Zero,Zero) -> applyArgument Zero Zero op
      *    | (Zero,One)  -> applyArgument Zero One  op
      *    | (One ,Zero) -> applyArgument One  Zero op                      
      *    | (One ,One ) -> applyArgument One  One  op
      *                   
-     *    | (One ,NSome rg) -> NSome ( {node = rg.node;
+     *    | (One ,Some rg) -> Some ( {node = rg.node;
      *                                  id = rg.id;
      *                                  zeroChild = apply One rg.zeroChild op;
      *                                  oneChild  = apply One rg.oneChild op })
      *                       
-     *    | (Zero ,NSome rg) -> NSome ( {node = rg.node;
+     *    | (Zero ,Some rg) -> Some ( {node = rg.node;
      *                                   id=rg.id;
      *                                   zeroChild = apply Zero rg.zeroChild op;
      *                                   oneChild  = apply Zero rg.oneChild op })
      *                        
-     *    | (NSome rf, NSome rg) when (rf.node == rg.node) ->
-     *       (NSome ({node = rf.node;
+     *    | (Some rf, Some rg) when (rf.node == rg.node) ->
+     *       (Some ({node = rf.node;
      *                id = rf.id;
      *                zeroChild = (apply rf.zeroChild rg.zeroChild op);
      *                oneChild  = (apply rf.oneChild  rg.oneChild op)}))
      * 
-     *    | (NSome rf, NSome rg) when (rf.node != rg.node) ->
-     *       (NSome ({node = rf.node;
+     *    | (Some rf, Some rg) when (rf.node != rg.node) ->
+     *       (Some ({node = rf.node;
      *                id = rf.id;
      *                zeroChild = (apply rf.zeroChild rg.zeroChild op);
      *                oneChild  = (apply rf.oneChild  rg.oneChild op)}))
      * 
      *      
-     *    | (NSome rf, Zero) ->
-     *       (NSome ({node = rf.node;
+     *    | (Some rf, Zero) ->
+     *       (Some ({node = rf.node;
      *                id = rf.id;
      *                zeroChild = (apply rf.zeroChild Zero op);
      *                oneChild  = (apply rf.oneChild  Zero op)}))
-     *    | (NSome rf, One) ->
-     *       (NSome ({node = rf.node;
+     *    | (Some rf, One) ->
+     *       (Some ({node = rf.node;
      *                id = rf.id;
      *                zeroChild = (apply rf.zeroChild One op);
      *                oneChild  = (apply rf.oneChild  One op)}))
-     *    | (NSome _, NSome _) -> failwith "guarded condition should have caught apply"
+     *    | (Some _, Some _) -> failwith "guarded condition should have caught apply"
      *   ) *)
 
 
@@ -411,29 +418,29 @@ X_j (X_i : i>j | 0 | 1) case
     (* Example graphs for testing *)            
 
     (* let exBf = let    x4 = mk ("x",4) Zero One
-     *            in let x3 = mk ("x",3) (NSome x4) One
-     *               in let x2 = mk ("x",2) (NSome x4) (NSome x3)
-     *                  in mk ("x",1) (NSome x2) (NSome x3) *)
+     *            in let x3 = mk ("x",3) (Some x4) One
+     *               in let x2 = mk ("x",2) (Some x4) (Some x3)
+     *                  in mk ("x",1) (Some x2) (Some x3) *)
 
     (* let exBg = let    x4 = mk ( "x",4) Zero One
-     *            in let x3 = mk ( "x",3) (NSome x4) One
-     *               in  mk ( "x",1) (NSome x4) (NSome x3)
+     *            in let x3 = mk ( "x",3) (Some x4) One
+     *               in  mk ( "x",1) (Some x4) (Some x3)
      * 
      * 
      * 
      *                 
-     * let exBgBf = apply (NSome exBf) (NSome exBg) (||) *)
+     * let exBgBf = apply (Some exBf) (Some exBg) (||) *)
 
     (* let exOneNode = mk ("x",1) Zero One *)
                   
-    (* let prop_reflexive_apply : bdd noption = (apply One (NSome exOneNode) (||) )
+    (* let prop_reflexive_apply : bdd option = (apply One (Some exOneNode) (||) )
      * let show_prop = match prop_reflexive_apply  with
      *     One -> "one"
      *   | Zero -> "Zero"
-     *   | (NSome rg) -> showBdd rg
+     *   | (Some rg) -> showBdd rg
      * 
      *)                 
-    let exSimple = let x3 = mk ("x",3) Zero One
-                   in mk ("x",1) (NSome x3) (NSome x3) 
+    let exSimple = let x3 = mk ("x",3) None None
+                   in mk ("x",1) (Some x3) (Some x3) 
 
   end
