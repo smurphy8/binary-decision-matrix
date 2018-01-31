@@ -68,6 +68,8 @@ module Robdd =
                                                             | None -> None
                                                             | Some a -> Some (f a))
 
+
+
     
 
     type bddData = { label: label}
@@ -217,9 +219,17 @@ r Otherwise, we set id(n) to the next unused integer label.
 
                   
     let zeroBdd = { node = {label = Label ("0",0)};
-                    id = Some (Id ("0",0));
+                    id = Some zeroId;
                     zeroChild = None;
                     oneChild = None}     
+
+
+    let oneBdd = { node = {label = Label ("1",1)};
+                   id = Some oneId;
+                   zeroChild = None;
+                   oneChild = None}     
+
+
 
     (* Transform the given bdd to one with the id provided *) 
     let reindex (bdd : bdd)  newindex = {node      = bdd.node;
@@ -238,7 +248,9 @@ r Otherwise, we set id(n) to the next unused integer label.
                                                                     idZeroChild = lbl0;
                                                                     idOneChild  = lbl1; }
 
-
+    let fromOptional d ma = match ma with
+      |(Some a) -> a
+      | None -> d
 
     (* This function returns the value that should be next assigned to a labeling scheme.
        If the value is already found in the map, then return this value.
@@ -259,31 +271,37 @@ r Otherwise, we set id(n) to the next unused integer label.
    
                                         
                                         
-    let label bdd =
-      let rec label' (indexTracker : bddIdRecord ref) bdd' = ( let zeroChild = bdd'.zeroChild;
-                                                               and oneChild  = bdd'.oneChild;
-                                                               in let optOneChildIndex = (mapSome (fun bddChild -> bddChild.id) zeroChild)
-                                                                  and optZeroChildIndex = (mapSome (fun bddChild -> bddChild.id) zeroChild)
-                                                                  and jid (a : ((id option) option)) : (id option) = (joinSome a)
-                                                                  in ( match (jid optOneChildIndex, joinSome optZeroChildIndex) with
-                                                                         (Some idx1, Some idx0) when (idx1 == idx0) -> (reindex bdd' idx1)
-                                                                       | (Some idx1, Some idx0) ->
-                                                                          let nodeIdData = makeIdBddData bdd' idx0 idx1
-                                                                          in let (newTracker, newIdVal) = getIndexToAssign !indexTracker nodeIdData
-                                                                                                        
-                                                                             in let _ = indexTracker := newTracker
-                                                                                in (reindex bdd' (Id newIdVal))
-                                                                       | (None, Some _lbl0) ->
-                                                                          let indexedOneChild  =  mapSome (label' indexTracker) oneChild
-                                                                          in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
-                                                                       | (Some _lbl1, None) ->
-                                                                          let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
-                                                                          in  label' indexTracker (updateChildren bdd' indexedZeroChild oneChild) 
-                                                                       | (None,None) ->
-                                                                          let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
-                                                                          and indexedOneChild  =  mapSome (label' indexTracker) oneChild
-                                                                          in  label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
-      in label' (ref { idMap=(IdMap.empty) ; idInt=1 }) bdd
+    let labelIt (bdd:bdd) : bdd =  
+      let rec label' (indexTracker : bddIdRecord ref) (bdd':bdd) : bdd  =
+        ( let zeroChild = bdd'.zeroChild;
+          and oneChild  = bdd'.oneChild;
+          in let optOneChildIndex = (mapSome (fun bddChild -> bddChild.id) oneChild)
+             and optZeroChildIndex = (mapSome (fun bddChild -> bddChild.id) zeroChild)
+             and jid (a : ((id option) option)) : (id option) = (joinSome a)                                                 
+             in ( match (jid optOneChildIndex, joinSome optZeroChildIndex) with
+                    (Some idx1, Some idx0) when (idx1 == idx0) -> let _ = print_string "reindex_line"
+                                                                  in fromOptional bdd oneChild
+                  | (Some idx1, Some idx0) ->
+                     let nodeIdData = makeIdBddData bdd' idx0 idx1
+                     and _ = print_string "idx1 idx0 line"
+                     in let (newTracker, newIdVal) = getIndexToAssign !indexTracker nodeIdData                      
+                        in let _ = indexTracker := newTracker
+                           in (reindex bdd' (Id newIdVal))
+                  | (None, Some _lbl0) ->
+                     let indexedOneChild  =  mapSome (label' indexTracker) oneChild
+                     and _ = print_string "None idx0 line"
+                     in  label' indexTracker (updateChildren bdd' zeroChild indexedOneChild)
+                  | (Some _idx1, None) ->
+                     let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
+                     and _ = print_string "idx1 None line"
+                     in  label' indexTracker (updateChildren bdd' indexedZeroChild oneChild) 
+                  | (None,None) ->
+                     let indexedZeroChild =  mapSome (label' indexTracker) zeroChild
+                     and indexedOneChild  =  mapSome (label' indexTracker) oneChild
+                     and _ = print_string "None None line"
+                     in label' indexTracker (updateChildren bdd' indexedZeroChild indexedOneChild) )) 
+      in let _ = print_string "start label 2"
+         in  label' (ref { idMap=(IdMap.empty) ; idInt=1 }) bdd 
           
 
     (* 
@@ -439,8 +457,44 @@ X_j (X_i : i>j | 0 | 1) case
      *   | Zero -> "Zero"
      *   | (Some rg) -> showBdd rg
      * 
-     *)                 
-    let exSimple = let x3 = mk ("x",3) None None
-                   in mk ("x",1) (Some x3) (Some x3) 
+     *)
+
+
+           
+    let exSimple =  let x3 = mk ("x",3) (Some zeroBdd) (Some zeroBdd)
+                    and x2 = mk ("x",2) (Some zeroBdd) (Some oneBdd)
+                    in  mk ("x",4) (Some x2) (Some x3)
+                   
+
+
+
+(* 
+  # labelIt exSimple;;
+start label 2idx1 idx0 lineidx1 idx0 lineNone None lineidx1 idx0 line- : bdd =
+{node = {label = Label ("x", 4)}; id = Some (Id ("#", 4));
+ zeroChild =
+  Some
+   {node = {label = Label ("x", 2)}; id = Some (Id ("#", 2));
+    zeroChild =
+     Some
+      {node = {label = Label ("0", 0)}; id = Some (Id ("0", 0));
+       zeroChild = None; oneChild = None};
+    oneChild =
+     Some
+      {node = {label = Label ("1", 1)}; id = Some (Id ("1", 1));
+       zeroChild = None; oneChild = None}};
+ oneChild =
+  Some
+   {node = {label = Label ("x", 3)}; id = Some (Id ("#", 3));
+    zeroChild =
+     Some
+      {node = {label = Label ("0", 0)}; id = Some (Id ("0", 0));
+       zeroChild = None; oneChild = None};
+    oneChild =
+     Some
+      {node = {label = Label ("1", 1)}; id = Some (Id ("1", 1));
+       zeroChild = None; oneChild = None}}}
+
+*)
 
   end
