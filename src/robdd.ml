@@ -27,7 +27,7 @@ module Robdd =
                
     let emptyNames : names = Hashtbl.create 0
                            
-                           
+        
 
     let addName (names:names) (name ,i ) :_    =
       (match Hashtbl.find_all names name with
@@ -461,7 +461,7 @@ X_j (X_i : i>j | 0 | 1) case
 
 
            
-    let exSimple =  let x3 = mk ("x",3) (Some zeroBdd) (Some zeroBdd)
+    let exSimple : bdd =  let x3 = mk ("x",3) (Some zeroBdd) (Some zeroBdd)
                     and x2 = mk ("x",2) (Some zeroBdd) (Some oneBdd)
                     in  mk ("x",4) (Some x2) (Some x3)
                    
