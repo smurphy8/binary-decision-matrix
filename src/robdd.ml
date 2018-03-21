@@ -81,9 +81,6 @@ module Robdd =
                      }
                    
                       
-    let zeroNode = {label = Label ("zero",0)}
-    let oneNode = {label = Label ("one",1)}
-                
 
     let compareBddData bddA bddB =  let (Label nameLabelA) = bddA.label
                                     and (Label nameLabelB) = bddB.label
@@ -140,55 +137,6 @@ module Robdd =
 
     let gvBddNodeEdge style n1 n2 = (gvBddNodeEdgeLabel n1) ^ " -> " ^ (gvBddNodeEdgeLabel n2) ^ " [style="^style^"];"
 
-    let mkBddZeroEdge bdd = (bdd.node, zeroNode)                            
-    let gvBddZeroEdge bdd = (gvBddNodeEdgeLabel bdd) ^ " -> " ^ "0 [style=dotted];"
-
-    let mkBddOneEdge bdd = (bdd.node, oneNode)
-    let gvBddOneEdge bdd = (gvBddNodeEdgeLabel bdd) ^ " -> " ^ "1 [style=solid];"
-
-
-                         
-    (* let showBdd bddP =
-     *   let rec showBdd' nodes edgesZero edgesOne bddC = 
-     *     let allNodes = NodeSet.add bddC.node nodes             
-     *     in match bddC.zeroChild with
-     *          Zero   -> (let zel = mkBddZeroEdge bddC
-     *                     in match bddC.oneChild with
-     *                          One -> (let oel = mkBddOneEdge bddC
-     *                                  and _ = print_string "One"
-     *                                  in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
-     *                         |Zero -> (let oel = mkBddZeroEdge bddC
-     *                                   and _ = print_string "Zero"
-     *                                   in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))       
-     *                         |Some childBdd ->
-     *                           (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )
-     *         |One   -> (let zel = mkBddOneEdge bddC
-     *                    in match bddC.oneChild with
-     *                         One -> (let oel = mkBddOneEdge bddC
-     *                                 and _ = print_string "One"
-     *                                 in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))
-     *                        |Zero -> (let oel = mkBddZeroEdge bddC
-     *                                  and _ = print_string "Zero"
-     *                                  in (allNodes, EdgeSet.add zel edgesZero , EdgeSet.add oel edgesOne ))      
-     *                        |Some childBdd ->
-     *                          (allNodes,EdgeSet.add zel edgesZero, EdgeSet.add (bddC.node , childBdd.node) edgesOne) )         
-     *         |Some bddZ ->
-     *           let (zNodes,zEdges,oEdges) = showBdd' allNodes (EdgeSet.add (bddC.node, bddZ.node) edgesZero) edgesOne bddZ
-     *           in match bddC.oneChild with
-     *                One -> (let oel = mkBddOneEdge bddC 
-     *                        in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-     *              | Zero -> (let oel = mkBddOneEdge bddC 
-     *                         in (zNodes, zEdges, EdgeSet.add oel oEdges ))
-     *              |Some bddO -> showBdd' zNodes zEdges (EdgeSet.add (bddC.node , bddO.node) oEdges) bddO *)
-                              
-                              
-      (* in let (nodes,zEdges,oEdges) = showBdd' (NodeSet.empty) (EdgeSet.empty) (EdgeSet.empty) bddP
-       *    in let nodeDefinitions = (NodeSet.fold (fun n str -> gvBddNode n ^ str)  nodes "")
-       *       and zeroDefinitions = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "dotted" ezA ezB) ^ str )  zEdges "")
-       *       and oneDefinitions  = (EdgeSet.fold (fun (ezA,ezB) str -> (gvBddNodeEdge "solid" ezA ezB) ^ str)  oEdges "")
-       *       and preamble = "digraph G { size = \"4,4\"; "
-       *       and graphStart = "subgraph Live { "                         
-       *       in  (preamble ^ nodeDefinitions ^ graphStart ^ zeroDefinitions ^ oneDefinitions ^ "}}") *)
 
 
 
