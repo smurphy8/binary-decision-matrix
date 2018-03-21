@@ -63,12 +63,6 @@ module Robdd =
 
 
 
-    module EdgeSet = Set.Make(
-                         struct
-                           let compare = Pervasives.compare
-                           type t = bddData*bddData
-                         end )
-                   
                    
     (* structure to hold a list of labels with id and the latest id used *)                  
     type bddIdRecord = { idMap: int IdMap.t;
