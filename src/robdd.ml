@@ -61,11 +61,6 @@ module Robdd =
                          end
                        )
 
-    module NodeSet = Set.Make(
-                         struct
-                           let compare = Pervasives.compare
-                           type t = bddData
-                         end)
 
 
     module EdgeSet = Set.Make(
