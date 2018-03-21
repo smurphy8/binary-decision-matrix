@@ -158,14 +158,12 @@ r Otherwise, we set id(n) to the next unused integer label.
         None -> false
       | Some _ -> true
 
-    let isZero bdd = bdd.node == {label = (Label ("0",0))}
 
-    let isOne bdd = bdd.node == {label = (Label ("1",1))}
 
     let zeroId = (Id ("0",0))
     let oneId = (Id ("1",1))
 
-                  
+                      
     let zeroBdd = { node = {label = Label ("0",0)};
                     id = Some zeroId;
                     zeroChild = None;
