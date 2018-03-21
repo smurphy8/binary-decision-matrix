@@ -24,53 +24,17 @@ module Robdd =
     type names = (string,int) Hashtbl.t
     type name  = (string * int)
 
-               
-    let emptyNames : names = Hashtbl.create 0
-                           
-        
-
-    let addName (names:names) (name ,i ) :_    =
-      (match Hashtbl.find_all names name with
-         [] -> (Hashtbl.add names name i)
-        |x::_ -> Hashtbl.replace names name (x + 1))
-
-
-
-
-    let showNames (names:names): string = Hashtbl.fold (fun a b c -> a ^ "." ^ (string_of_int b) ^ " " ^ c ) names ""
-
-    let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
-
-
-
-    (* produce a fresh name *)               
-    let generate oldNames name = match Hashtbl.find_all oldNames name with
-        [] -> Hashtbl.add oldNames name 1
-       |x::_ -> Hashtbl.replace oldNames name (x+1)
-
-
-
     (* BDD Stuff *)
 
     (* Data type for BDD *)
               
     type id = Id of name    
     type label = Label of name
-
-    (* map over some data *) 
-
-    let joinSome (ooa : ((id option) option)) : (id option) = match ooa with
-      | None  -> None
-      |Some None -> None
-      |Some oa -> oa
-
-    let mapSome (f:'a -> 'b) (b:'a option) : 'b option = (match b with
-                                                            | None -> None
-                                                            | Some a -> Some (f a))
+               
+    let emptyNames : names = Hashtbl.create 0
+                           
 
 
-
-    
 
     type bddData = { label: label}
                  
@@ -80,12 +44,7 @@ module Robdd =
                       
                      }
                    
-                      
 
-    let compareBddDataByLabel bddA bddB =  let (Label nameLabelA) = bddA.label
-                                    and (Label nameLabelB) = bddB.label
-                                    in (nameLabelA == nameLabelB) 
-                                     
 
 
     type bdd = { node: bddData;
@@ -116,6 +75,53 @@ module Robdd =
     (* structure to hold a list of labels with id and the latest id used *)                  
     type bddIdRecord = { idMap: int IdMap.t;
                          idInt: int}
+
+
+        
+
+    let addName (names:names) (name ,i ) :_    =
+      (match Hashtbl.find_all names name with
+         [] -> (Hashtbl.add names name i)
+        |x::_ -> Hashtbl.replace names name (x + 1))
+
+
+
+
+    let showNames (names:names): string = Hashtbl.fold (fun a b c -> a ^ "." ^ (string_of_int b) ^ " " ^ c ) names ""
+
+    let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
+
+
+
+    (* produce a fresh name *)               
+    let generate oldNames name = match Hashtbl.find_all oldNames name with
+        [] -> Hashtbl.add oldNames name 1
+       |x::_ -> Hashtbl.replace oldNames name (x+1)
+
+
+
+
+    (* map over some data *) 
+
+    let joinSome (ooa : ((id option) option)) : (id option) = match ooa with
+      | None  -> None
+      |Some None -> None
+      |Some oa -> oa
+
+    let mapSome (f:'a -> 'b) (b:'a option) : 'b option = (match b with
+                                                            | None -> None
+                                                            | Some a -> Some (f a))
+
+
+
+                      
+
+    let compareBddDataByLabel bddA bddB =  let (Label nameLabelA) = bddA.label
+                                    and (Label nameLabelB) = bddB.label
+                                    in (nameLabelA == nameLabelB) 
+                                     
+
+    
                    
     let mk name z o = {node={label=(Label name)};
                        id = None;
