@@ -154,10 +154,6 @@ with reduction C3).
 r Otherwise, we set id(n) to the next unused integer label.
      *)              
 
-    let is a = match a with
-        None -> false
-      | Some _ -> true
-
 
 
     let zeroId = (Id ("0",0))
