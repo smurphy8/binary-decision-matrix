@@ -30,8 +30,6 @@ module Robdd =
               
     type id = Id of name    
     type label = Label of name
-               
-    let emptyNames : names = Hashtbl.create 0
                            
 
 
@@ -46,12 +44,16 @@ module Robdd =
                    
 
 
-
+    (* 
+       The bdd type holds the structure of the graph
+       id's represent the automated naming achieved
+       by running 'labelIt' against a given graph
+     *)
     type bdd = { node: bddData;
                  id: (id option);
                  zeroChild: (bdd option);
                  oneChild: bdd option  }
-
+    (* This map holds bound names for Ids*)
     module IdMap   = Map.Make (
                          struct
                            type t = idBddData
@@ -65,6 +67,7 @@ module Robdd =
                            type t = bddData
                          end)
 
+
     module EdgeSet = Set.Make(
                          struct
                            let compare = Pervasives.compare
@@ -77,6 +80,8 @@ module Robdd =
                          idInt: int}
 
 
+               
+    let emptyNames : names = Hashtbl.create 0
         
 
     let addName (names:names) (name ,i ) :_    =
