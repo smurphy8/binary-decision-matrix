@@ -82,7 +82,7 @@ module Robdd =
                    
                       
 
-    let compareBddData bddA bddB =  let (Label nameLabelA) = bddA.label
+    let compareBddDataByLabel bddA bddB =  let (Label nameLabelA) = bddA.label
                                     and (Label nameLabelB) = bddB.label
                                     in (nameLabelA == nameLabelB) 
                                      
@@ -216,7 +216,7 @@ r Otherwise, we set id(n) to the next unused integer label.
     (* Transform a bdd node into an idbdd node for comparison. *)
     (* idBddData *)   
     (* bddIdRecord *)
-   
+       
                                         
                                         
     let labelIt (bdd:bdd) : bdd =  
