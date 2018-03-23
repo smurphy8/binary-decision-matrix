@@ -94,7 +94,9 @@ module Robdd =
                       
 
     
-                   
+    (* Shorthand function for making a quick tree 
+       us 'labelIt' to add Ids *)
+                                                       
     let mk name z o = {node={label=(Label name)};
                        id = None;
                        zeroChild = z;
@@ -143,7 +145,7 @@ r Otherwise, we set id(n) to the next unused integer label.
                     zeroChild = None;
                     oneChild = None}     
 
-
+    (* a bdd with just zero node *)                       
     let oneBdd = { node = {label = Label ("1",1)};
                    id = Some oneId;
                    zeroChild = None;
