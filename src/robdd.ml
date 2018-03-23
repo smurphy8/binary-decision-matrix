@@ -70,27 +70,8 @@ module Robdd =
 
 
                
-    let emptyNames : names = Hashtbl.create 0
-        
-
-    let addName (names:names) (name ,i ) :_    =
-      (match Hashtbl.find_all names name with
-         [] -> (Hashtbl.add names name i)
-        |x::_ -> Hashtbl.replace names name (x + 1))
-
-
-
-
-    let showNames (names:names): string = Hashtbl.fold (fun a b c -> a ^ "." ^ (string_of_int b) ^ " " ^ c ) names ""
 
     let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
-
-
-
-    (* produce a fresh name *)               
-    let generate oldNames name = match Hashtbl.find_all oldNames name with
-        [] -> Hashtbl.add oldNames name 1
-       |x::_ -> Hashtbl.replace oldNames name (x+1)
 
 
 
