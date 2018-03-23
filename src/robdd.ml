@@ -155,11 +155,11 @@ r Otherwise, we set id(n) to the next unused integer label.
      *)              
 
 
-
+    (* Id for the bottom "0" and "1" leaves respectively *)
     let zeroId = (Id ("0",0))
     let oneId = (Id ("1",1))
 
-                      
+    (* a bdd with just zero node *)                       
     let zeroBdd = { node = {label = Label ("0",0)};
                     id = Some zeroId;
                     zeroChild = None;
