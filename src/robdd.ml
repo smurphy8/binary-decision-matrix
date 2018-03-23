@@ -76,13 +76,15 @@ module Robdd =
 
 
 
-    (* map over some data *) 
 
+    (* join for 'Some' Monad *)
+                                               
     let joinSome (ooa : ((id option) option)) : (id option) = match ooa with
       | None  -> None
       |Some None -> None
       |Some oa -> oa
 
+    (* map over some data *) 
     let mapSome (f:'a -> 'b) (b:'a option) : 'b option = (match b with
                                                             | None -> None
                                                             | Some a -> Some (f a))
@@ -90,11 +92,6 @@ module Robdd =
 
 
                       
-
-    let compareBddDataByLabel bddA bddB =  let (Label nameLabelA) = bddA.label
-                                    and (Label nameLabelB) = bddB.label
-                                    in (nameLabelA == nameLabelB) 
-                                     
 
     
                    
