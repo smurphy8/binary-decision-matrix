@@ -170,6 +170,8 @@ r Otherwise, we set id(n) to the next unused integer label.
                                                                     idZeroChild = lbl0;
                                                                     idOneChild  = lbl1; }
 
+
+                                                                 
     let fromOptional d ma = match ma with
       |(Some a) -> a
       | None -> d
@@ -178,14 +180,15 @@ r Otherwise, we set id(n) to the next unused integer label.
        If the value is already found in the map, then return this value.
        Otherwise get a fresh integer, update the records and return  *)
       
-    let getIndexToAssign (idRecord:bddIdRecord) (idData:idBddData) : bddIdRecord * (string * int) = if (IdMap.mem idData idRecord.idMap )
-                                                                                                    then (idRecord, ("#",(IdMap.find  idData idRecord.idMap)))
-                                                                                                    else let updatedInteger = idRecord.idInt + 1
-                                                                                                         in  let updatedMap = IdMap.add idData
-                                                                                                                                updatedInteger
-                                                                                                                                idRecord.idMap                                 
-                                                                                                             in ( {idMap = updatedMap; idInt= updatedInteger}
-                                                                                                                , ("#", updatedInteger))
+    let getIndexToAssign (idRecord:bddIdRecord) (idData:idBddData) : bddIdRecord * (string * int) =
+      if (IdMap.mem idData idRecord.idMap )
+      then (idRecord, ("#",(IdMap.find  idData idRecord.idMap)))
+      else let updatedInteger = idRecord.idInt + 1
+           in  let updatedMap = IdMap.add idData
+                                  updatedInteger
+                                  idRecord.idMap                                 
+               in ( {idMap = updatedMap; idInt= updatedInteger}
+                  , ("#", updatedInteger))
 
     (* Transform a bdd node into an idbdd node for comparison. *)
     (* idBddData *)   
@@ -250,7 +253,15 @@ j > i). We describe how nodes of layer i (i.e. x i -nodes) are being handled.
      *)
 
 
-
+    let reduce (bdd':bdd) : bdd =
+      let maybeZeroChild = bdd'.zeroChild;
+      and maybeOneChild  = bdd'.oneChild;
+      in match (maybeZeroChild, maybeOneChild) with
+         | (None,None) -> bdd'
+         | (Some _,None) ->  bdd'
+         | (None, Some _) ->  bdd'
+         | (Some zeroChild,Some oneChild) ->  bdd'
+         
                        
                        
     (* apply a binary function in two arguments to a bdd *) 
