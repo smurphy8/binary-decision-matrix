@@ -61,6 +61,22 @@ module Robdd =
                          end
                        )
 
+
+
+
+    (* A flatBdd is useful for total graph reductions because 
+       the structure is kept seperated from the labeling, 
+       allowing for easier regrouping.
+
+       Its implementation below consists of an Array and a map.
+       [label_0, label_1 ... label_n]
+        id=0   , id=1, ... , id=n]  
+       label_0 = The Zero Label
+       label_1 = The One Label
+     *)
+
+
+
     (* FlatBDD children *)
     type flatChildren = { flatZero : int32; flatOne32: int32}
     (* FlatBDD Structure *)
@@ -73,15 +89,45 @@ module Robdd =
     (* A flatBdd is useful for total graph reductions because 
        the structure is kept seperated from the labeling, allowing for easier regrouping *)
 
-    type flatBdd = { labels : label array;
+    type flatBdd  = { labels : label array;
                      structure : int FlatBddMap.t}
+
+
+
+
+                 
                             
     (* structure to hold a list of labels with id and the latest id used *)                  
     type bddIdRecord = { idMap: int IdMap.t;
                          idInt: int}
 
+
     
-               
+    (* Simple constructor no checking, but puts the map pieces and list pieces into the flatBDD Record
+       Part of the construction.
+     *)    
+    let constructFromList lst map flatBdd =
+      let mergeConstructor _ v1 v2 = match (v1,v2) with
+          (None   , None) -> None
+        | (Some a , None) -> Some a
+        | (None   , Some b) -> Some b
+        | (Some a , Some _) -> Some a 
+      in {labels = Array.append (Array.of_list lst) flatBdd.labels;
+          structure = FlatBddMap.merge mergeConstructor map (flatBdd.structure); }
+      
+    (* Convert a bdd into a flatBdd *) 
+    (* let fromBdd (bddIncoming:bdd) =
+     *   let rec fromBddRec lst bdd' =
+     *     let maybeZeroChild = bdd'.zeroChild;
+     *     and maybeOneChild  = bdd'.oneChild;
+     *     in match (maybeZeroChild, maybeOneChild) with
+     *        | (None,None) -> bdd'
+     *        | (Some _,None) -> bdd'
+     *        | (None, Some _) -> bdd'
+     *        | (Some zeroChild',Some oneChild') when ( zeroChild'.id == oneChild'.id)  ->
+     *           
+     *   in fromBddRec [] bddIncoming *)
+                   
 
     let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
 
