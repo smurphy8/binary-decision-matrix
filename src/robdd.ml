@@ -105,28 +105,31 @@ module Robdd =
     
     (* Simple constructor no checking, but puts the map pieces and list pieces into the flatBDD Record
        Part of the construction.
-     *)    
+     *)
+
+    (* Merge constructor for union left bias *)                 
+    let mergeConstructor _ v1 v2 = match (v1,v2) with
+        (None   , None) -> None
+      | (Some a , None) -> Some a
+      | (None   , Some b) -> Some b
+      | (Some a , Some _) -> Some a
+                           
     let constructFromList lst map flatBdd =
-      let mergeConstructor _ v1 v2 = match (v1,v2) with
-          (None   , None) -> None
-        | (Some a , None) -> Some a
-        | (None   , Some b) -> Some b
-        | (Some a , Some _) -> Some a 
-      in {labels = Array.append (Array.of_list lst) flatBdd.labels;
-          structure = FlatBddMap.merge mergeConstructor map (flatBdd.structure); }
-      
+      {labels = Array.append (Array.of_list lst) flatBdd.labels;
+       structure = FlatBddMap.merge mergeConstructor map (flatBdd.structure); }
+
     (* Convert a bdd into a flatBdd *) 
-    (* let fromBdd (bddIncoming:bdd) =
-     *   let rec fromBddRec lst bdd' =
-     *     let maybeZeroChild = bdd'.zeroChild;
-     *     and maybeOneChild  = bdd'.oneChild;
-     *     in match (maybeZeroChild, maybeOneChild) with
-     *        | (None,None) -> bdd'
-     *        | (Some _,None) -> bdd'
-     *        | (None, Some _) -> bdd'
-     *        | (Some zeroChild',Some oneChild') when ( zeroChild'.id == oneChild'.id)  ->
-     *           
-     *   in fromBddRec [] bddIncoming *)
+    let fromBdd (bddIncoming:bdd) =
+      let rec fromBddRec lst map bdd' =
+        let maybeZeroChild = bdd'.zeroChild;
+        and maybeOneChild  = bdd'.oneChild;
+        in match (maybeZeroChild, maybeOneChild) with
+           | (None,None) -> constructFromList lst map
+           | (Some zeroChild ,None) -> fromBddRec lst map zeroChild
+           | (None, Some oneChild ) -> fromBddRec lst map oneChild
+           | (Some zeroChild',Some _) -> 
+              fromBddRec lst map zeroChild'
+      in fromBddRec [] FlatBddMap.empty bddIncoming
                    
 
     let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
