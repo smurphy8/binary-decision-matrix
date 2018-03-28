@@ -61,14 +61,26 @@ module Robdd =
                          end
                        )
 
+    (* FlatBDD children *)
+    type flatChildren = { flatZero : int32; flatOne32: int32}
+    (* FlatBDD Structure *)
+    module FlatBddMap = Map.Make (
+                                  struct
+                                    type t = flatChildren
+                                    let compare = Pervasives.compare
+                                  end
+                                )
+    (* A flatBdd is useful for total graph reductions because 
+       the structure is kept seperated from the labeling, allowing for easier regrouping *)
 
-
-                   
+    type flatBdd = { labels : label array;
+                     structure : int FlatBddMap.t}
+                            
     (* structure to hold a list of labels with id and the latest id used *)                  
     type bddIdRecord = { idMap: int IdMap.t;
                          idInt: int}
 
-
+    
                
 
     let showName ((str, i): string*int):string = str ^ "_" ^ (string_of_int i)
@@ -253,14 +265,22 @@ j > i). We describe how nodes of layer i (i.e. x i -nodes) are being handled.
      *)
 
 
-    let reduce (bdd':bdd) : bdd =
-      let maybeZeroChild = bdd'.zeroChild;
-      and maybeOneChild  = bdd'.oneChild;
-      in match (maybeZeroChild, maybeOneChild) with
-         | (None,None) -> bdd'
-         | (Some _,None) ->  bdd'
-         | (None, Some _) ->  bdd'
-         | (Some zeroChild,Some oneChild) ->  bdd'
+    let reduce (bddIncoming:bdd) : bdd =
+      let rec reduceRec (idsFound: int IdMap.t ) (bdd': bdd) =
+        let maybeZeroChild = bdd'.zeroChild;
+        and maybeOneChild  = bdd'.oneChild;
+        in match (maybeZeroChild, maybeOneChild) with
+           | (None,None) -> bdd'
+           | (Some _,None) -> bdd'
+           | (None, Some _) -> bdd'
+           | (Some zeroChild',Some oneChild') when ( zeroChild'.id == oneChild'.id)  ->
+              let processIdenticalChildrenCase = reduceRec idsFound zeroChild'
+              in processIdenticalChildrenCase
+           | (Some zeroChild',Some oneChild') when ( zeroChild'.id == oneChild'.id)  ->
+              let processIdenticalChildrenCase = reduceRec idsFound zeroChild'
+              in processIdenticalChildrenCase
+           | (Some _ , Some _) -> bdd'
+      in reduceRec IdMap.empty  bddIncoming 
          
                        
                        
