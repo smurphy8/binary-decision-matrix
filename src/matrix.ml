@@ -111,6 +111,7 @@ let relPreferredAtoB a b = Relation  { name = "relPreferredAtoB";
                                    b];
                            sort =  a }
 
+
 let assign str t = BoundVariable ((Variable str), t) 
 
 
